@@ -60,9 +60,11 @@ export default {
         'grid-pattern': 'var(--grid-pattern)',
         'gradient-primary': 'var(--gradient-primary)',
         'gradient-accent': 'var(--gradient-accent)',
+        'gradient-hero': 'var(--gradient-hero)',
       },
       boxShadow: {
         'glow-blue': 'var(--shadow-glow-blue)',
+        'glow-red': 'var(--shadow-glow-red)',
         'glow-orange': 'var(--shadow-glow-orange)',
         'card': 'var(--shadow-card)',
       },
