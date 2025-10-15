@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, UserPlus, Shield, Eye } from "lucide-react";
+import { Search, UserPlus, Shield, Eye, Package } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,12 +90,20 @@ const PersonnelList = () => {
                 <p className="text-sm text-muted-foreground">Security Personnel Management</p>
               </div>
             </div>
-            <Link to="/register">
-              <Button className="gap-2 bg-primary hover:bg-primary/90 shadow-glow-red">
-                <UserPlus className="h-4 w-4" />
-                Register New Personnel
-              </Button>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link to="/inventory">
+                <Button variant="ghost" className="gap-2">
+                  <Package className="h-4 w-4" />
+                  Inventory
+                </Button>
+              </Link>
+              <Link to="/register">
+                <Button className="gap-2 bg-primary hover:bg-primary/90 shadow-glow-red">
+                  <UserPlus className="h-4 w-4" />
+                  Register New Personnel
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>

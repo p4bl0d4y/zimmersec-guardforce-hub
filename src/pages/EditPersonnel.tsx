@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PersonnelForm } from "@/components/PersonnelForm";
 
-const RegisterPersonnel = () => {
+const EditPersonnel = () => {
+  const { id } = useParams();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -16,20 +18,15 @@ const RegisterPersonnel = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Zimmersec HRMS</h1>
-                <p className="text-sm text-muted-foreground">Register New Personnel</p>
+                <p className="text-sm text-muted-foreground">Edit Personnel</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Link to="/inventory">
-                <Button variant="ghost">Inventory</Button>
-              </Link>
-              <Link to="/">
-                <Button variant="ghost" className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to List
-                </Button>
-              </Link>
-            </div>
+            <Link to={`/personnel/${id}`}>
+              <Button variant="ghost" className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Details
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -38,7 +35,7 @@ const RegisterPersonnel = () => {
       <main className="container mx-auto px-6 py-8">
         <div className="max-w-5xl mx-auto">
           <div className="rounded-lg border border-border bg-card shadow-card p-6">
-            <PersonnelForm personnelId={null} />
+            <PersonnelForm personnelId={id || null} />
           </div>
         </div>
       </main>
@@ -49,4 +46,4 @@ const RegisterPersonnel = () => {
   );
 };
 
-export default RegisterPersonnel;
+export default EditPersonnel;

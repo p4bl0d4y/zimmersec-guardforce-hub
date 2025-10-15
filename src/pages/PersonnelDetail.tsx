@@ -94,12 +94,17 @@ const PersonnelDetail = () => {
                 <p className="text-sm text-muted-foreground">Personnel Details</p>
               </div>
             </div>
-            <Link to="/">
-              <Button variant="ghost" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to List
-              </Button>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link to="/inventory">
+                <Button variant="ghost">Inventory</Button>
+              </Link>
+              <Link to="/">
+                <Button variant="ghost" className="gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to List
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -135,10 +140,12 @@ const PersonnelDetail = () => {
                         <span className="text-muted-foreground">{personnel.role}</span>
                       </div>
                     </div>
-                    <Button className="gap-2 bg-primary hover:bg-primary/90">
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </Button>
+                    <Link to={`/personnel/${id}/edit`}>
+                      <Button className="gap-2 bg-primary hover:bg-primary/90">
+                        <Edit className="h-4 w-4" />
+                        Edit
+                      </Button>
+                    </Link>
                   </div>
 
                   {licenseStatus === "expiring" && (

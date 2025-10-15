@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Save, AlertCircle, Upload, X } from "lucide-react";
+import { Save, AlertCircle, Upload, X, Plus, Minus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "@/hooks/use-toast";
 
 interface PersonnelFormProps {
   personnelId: string | null;
@@ -67,6 +68,7 @@ export const PersonnelForm = ({ personnelId }: PersonnelFormProps) => {
     bootsSize: "",
     equipmentSerials: "",
     accessCardId: "",
+    assignedItems: [] as Array<{ itemId: string; itemName: string; quantity: number }>,
 
     // Records
     disciplinaryNotes: "",
@@ -83,6 +85,18 @@ export const PersonnelForm = ({ personnelId }: PersonnelFormProps) => {
 
   const handlePhotoUpload = (type: keyof typeof photos, file: File | null) => {
     setPhotos(prev => ({ ...prev, [type]: file }));
+  };
+
+  const handleSave = () => {
+    // Calculate inventory deductions
+    const itemSummary = formData.assignedItems.map(item => `${item.quantity}x ${item.itemName}`).join(', ');
+    
+    toast({
+      title: "Personnel Saved",
+      description: personnelId 
+        ? `Successfully updated personnel record${formData.assignedItems.length > 0 ? `. Assigned items: ${itemSummary}` : ''}` 
+        : `Successfully registered new personnel${formData.assignedItems.length > 0 ? ` with assigned items: ${itemSummary}` : ''}`,
+    });
   };
 
   const checkLicenseExpiry = (expiryDate: string) => {
@@ -109,7 +123,7 @@ export const PersonnelForm = ({ personnelId }: PersonnelFormProps) => {
             {personnelId ? `ID: ${formData.pid || "N/A"}` : "Fill in all required information"}
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={handleSave}>
           <Save className="h-4 w-4" />
           Save Personnel
         </Button>
@@ -572,6 +586,108 @@ export const PersonnelForm = ({ personnelId }: PersonnelFormProps) => {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Inventory Items Assignment</CardTitle>
+              <CardDescription>Assign inventory items to this personnel</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.assignedItems.length > 0 && (
+                <div className="space-y-3">
+                  {formData.assignedItems.map((item, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 border border-border rounded-lg bg-muted/30">
+                      <div className="flex-1">
+                        <p className="font-medium">{item.itemName}</p>
+                        <p className="text-xs text-muted-foreground">ID: {item.itemId}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            const updated = [...formData.assignedItems];
+                            if (updated[index].quantity > 1) {
+                              updated[index].quantity -= 1;
+                              setFormData({ ...formData, assignedItems: updated });
+                            }
+                          }}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="font-semibold w-8 text-center">{item.quantity}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            const updated = [...formData.assignedItems];
+                            updated[index].quantity += 1;
+                            setFormData({ ...formData, assignedItems: updated });
+                          }}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const updated = formData.assignedItems.filter((_, i) => i !== index);
+                          setFormData({ ...formData, assignedItems: updated });
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <Select
+                  onValueChange={(value) => {
+                    // Mock inventory items - in real app, fetch from API
+                    const mockItems = [
+                      { id: "1", name: "Security Jacket" },
+                      { id: "2", name: "Radio Transceiver" },
+                      { id: "3", name: "Tactical Flashlight" },
+                      { id: "4", name: "Body Camera" },
+                      { id: "5", name: "Duty Belt" },
+                    ];
+                    const selectedItem = mockItems.find(item => item.id === value);
+                    if (selectedItem && !formData.assignedItems.find(i => i.itemId === selectedItem.id)) {
+                      setFormData({
+                        ...formData,
+                        assignedItems: [
+                          ...formData.assignedItems,
+                          { itemId: selectedItem.id, itemName: selectedItem.name, quantity: 1 }
+                        ]
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select item to assign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Security Jacket</SelectItem>
+                    <SelectItem value="2">Radio Transceiver</SelectItem>
+                    <SelectItem value="3">Tactical Flashlight</SelectItem>
+                    <SelectItem value="4">Body Camera</SelectItem>
+                    <SelectItem value="5">Duty Belt</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select items from inventory to assign to this personnel. Quantities will be deducted from available inventory.
+              </p>
             </CardContent>
           </Card>
 
