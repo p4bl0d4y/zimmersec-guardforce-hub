@@ -10,6 +10,7 @@ import EditPersonnel from "./pages/EditPersonnel";
 import InventoryList from "./pages/InventoryList";
 import InventoryDetail from "./pages/InventoryDetail";
 import AddInventory from "./pages/AddInventory";
+import EditInventory from "./pages/EditInventory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/register" element={<RegisterPersonnel />} />
           <Route path="/inventory" element={<InventoryList />} />
           <Route path="/inventory/:id" element={<InventoryDetail />} />
+          <Route path="/inventory/:id/edit" element={<EditInventory />} />
           <Route path="/inventory/add" element={<AddInventory />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

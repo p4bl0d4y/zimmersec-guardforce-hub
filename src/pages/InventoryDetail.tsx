@@ -67,12 +67,20 @@ const InventoryDetail = () => {
                 <p className="text-sm text-muted-foreground">Inventory Item Details</p>
               </div>
             </div>
-            <Link to="/inventory">
-              <Button variant="ghost" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Inventory
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to={`/inventory/${id}/edit`}>
+                <Button variant="outline" className="gap-2">
+                  <Edit className="h-4 w-4" />
+                  Edit Item
+                </Button>
+              </Link>
+              <Link to="/inventory">
+                <Button variant="ghost" className="gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Inventory
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
