@@ -14,6 +14,177 @@ export type Database = {
   }
   public: {
     Tables: {
+      inventory: {
+        Row: {
+          assigned_quantity: number
+          available_quantity: number
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          manufacturer: string | null
+          model: string | null
+          name: string
+          serial_prefix: string | null
+          total_quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_quantity?: number
+          available_quantity?: number
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          serial_prefix?: string | null
+          total_quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_quantity?: number
+          available_quantity?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          serial_prefix?: string | null
+          total_quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      inventory_assignments: {
+        Row: {
+          assigned_date: string
+          created_at: string
+          id: string
+          inventory_id: string
+          notes: string | null
+          personnel_id: string
+          quantity: number
+          return_date: string | null
+          serial_number: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_date?: string
+          created_at?: string
+          id?: string
+          inventory_id: string
+          notes?: string | null
+          personnel_id: string
+          quantity?: number
+          return_date?: string | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_date?: string
+          created_at?: string
+          id?: string
+          inventory_id?: string
+          notes?: string | null
+          personnel_id?: string
+          quantity?: number
+          return_date?: string | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_assignments_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_assignments_personnel_id_fkey"
+            columns: ["personnel_id"]
+            isOneToOne: false
+            referencedRelation: "personnel"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personnel: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          created_at: string
+          date_hired: string | null
+          date_of_birth: string | null
+          department: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          employee_id: string
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          position: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          date_hired?: string | null
+          date_of_birth?: string | null
+          department?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_id: string
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          date_hired?: string | null
+          date_of_birth?: string | null
+          department?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_id?: string
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
