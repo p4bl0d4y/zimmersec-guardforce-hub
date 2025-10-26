@@ -11,7 +11,9 @@ import InventoryList from "./pages/InventoryList";
 import InventoryDetail from "./pages/InventoryDetail";
 import AddInventory from "./pages/AddInventory";
 import EditInventory from "./pages/EditInventory";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -22,14 +24,15 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<PersonnelList />} />
-          <Route path="/personnel/:id" element={<PersonnelDetail />} />
-          <Route path="/personnel/:id/edit" element={<EditPersonnel />} />
-          <Route path="/register" element={<RegisterPersonnel />} />
-          <Route path="/inventory" element={<InventoryList />} />
-          <Route path="/inventory/:id" element={<InventoryDetail />} />
-          <Route path="/inventory/:id/edit" element={<EditInventory />} />
-          <Route path="/inventory/add" element={<AddInventory />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<ProtectedRoute><PersonnelList /></ProtectedRoute>} />
+          <Route path="/personnel/:id" element={<ProtectedRoute><PersonnelDetail /></ProtectedRoute>} />
+          <Route path="/personnel/:id/edit" element={<ProtectedRoute><EditPersonnel /></ProtectedRoute>} />
+          <Route path="/register" element={<ProtectedRoute><RegisterPersonnel /></ProtectedRoute>} />
+          <Route path="/inventory" element={<ProtectedRoute><InventoryList /></ProtectedRoute>} />
+          <Route path="/inventory/:id" element={<ProtectedRoute><InventoryDetail /></ProtectedRoute>} />
+          <Route path="/inventory/:id/edit" element={<ProtectedRoute><EditInventory /></ProtectedRoute>} />
+          <Route path="/inventory/add" element={<ProtectedRoute><AddInventory /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

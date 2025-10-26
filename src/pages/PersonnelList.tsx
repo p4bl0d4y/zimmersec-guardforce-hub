@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, UserPlus, Shield, Eye, Package } from "lucide-react";
+import { Search, UserPlus, Shield, Eye, Package, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Table,
   TableBody,
@@ -25,6 +26,7 @@ interface Personnel {
 
 const PersonnelList = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { signOut } = useAuth();
 
   // Mock data - will be replaced with real data
   const mockPersonnel: Personnel[] = [
@@ -103,6 +105,10 @@ const PersonnelList = () => {
                   Register New Personnel
                 </Button>
               </Link>
+              <Button onClick={signOut} variant="ghost" className="gap-2">
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
