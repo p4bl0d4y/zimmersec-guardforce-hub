@@ -1,83 +1,124 @@
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Shield, Mail, Phone, MapPin, Calendar, FileText, Award, Package, AlertCircle, Edit } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Shield, Mail, Phone, MapPin, Calendar, FileText, Edit, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const PersonnelDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [personnel, setPersonnel] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
-  // Mock data - will be replaced with real data
-  const personnel = {
-    id: "1",
-    firstName: "John",
-    middleName: "Michael",
-    lastName: "Martinez",
-    dob: "1990-05-15",
-    pid: "ZS-2024-001",
-    mobile: "+1 (555) 123-4567",
-    email: "john.martinez@zimmersec.com",
-    address: "123 Main Street",
-    city: "New York",
-    state: "NY",
-    postal: "10001",
-    emergencyName: "Maria Martinez",
-    emergencyRelation: "Spouse",
-    emergencyPhone: "+1 (555) 987-6543",
-    
-    govId: "DL-123456789",
-    securityLicense: "SG-2024-ABC123",
-    licenseExpiry: "2026-12-31",
-    driverLicense: "NY-987654321",
-    driverClass: "Class B",
-    
-    hireDate: "2024-01-15",
-    role: "Security Guard",
-    status: "Active",
-    site: "Downtown Corporate Plaza",
-    shift: "Mon-Fri 9AM-5PM",
-    compensation: "$25/hour",
-    
-    firearmPermit: "yes",
-    firearmExpiry: "2025-08-20",
-    firstAidExpiry: "2025-03-10",
-    defensiveTacticsDate: "2024-02-15",
-    specializedTraining: "CCTV Monitoring, Access Control Systems, Executive Protection",
-    
-    jacketSize: "L",
-    shirtSize: "M",
-    pantsSize: "32",
-    bootsSize: "10",
-    equipmentSerials: "Radio: R-12345\nBody Camera: BC-67890\nKeys: K-Set-3",
-    accessCardId: "AC-001-ZS",
-    
-    bloodType: "O+",
-    performanceReviewDates: "2024-07-15",
+  useEffect(() => {
+    if (id) {
+      fetchPersonnel();
+    }
+  }, [id]);
+
+  const fetchPersonnel = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("personnel")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      setPersonnel(data);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const checkLicenseExpiry = (expiryDate: string) => {
-    if (!expiryDate) return null;
-    const expiry = new Date(expiryDate);
-    const now = new Date();
-    const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysUntilExpiry < 0) return "expired";
-    if (daysUntilExpiry <= 90) return "expiring";
-    return "valid";
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("personnel")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Personnel record deleted successfully",
+      });
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
-  const licenseStatus = checkLicenseExpiry(personnel.licenseExpiry);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading personnel details...</p>
+      </div>
+    );
+  }
 
-  const InfoItem = ({ icon: Icon, label, value }: { icon: any, label: string, value: string }) => (
+  if (!personnel) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Personnel not found</p>
+      </div>
+    );
+  }
+
+  const InfoItem = ({ icon: Icon, label, value }: { icon: any, label: string, value: string | null }) => (
     <div className="flex items-start gap-3">
       <Icon className="h-5 w-5 text-primary mt-0.5" />
       <div>
         <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="font-medium">{value}</p>
+        <p className="font-medium">{value || "—"}</p>
       </div>
     </div>
   );
+
+  const getStatusVariant = (status: string | null) => {
+    switch (status) {
+      case "active": return "default";
+      case "onboarding": return "secondary";
+      case "leave": return "outline";
+      case "terminated": return "destructive";
+      default: return "default";
+    }
+  };
+
+  const getStatusLabel = (status: string | null) => {
+    if (!status) return "Active";
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,79 +153,76 @@ const PersonnelDetail = () => {
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
         <div className="space-y-6">
-          {/* Hero Section with Photos */}
+          {/* Hero Section */}
           <Card className="overflow-hidden border-primary/20">
             <div className="bg-gradient-hero h-32" />
             <CardContent className="relative pt-0 pb-6">
               <div className="flex flex-col md:flex-row gap-6 -mt-16">
                 {/* Profile Photo */}
                 <div className="flex-shrink-0">
-                  <div className="w-32 h-32 rounded-lg border-4 border-card bg-muted flex items-center justify-center shadow-glow-red">
-                    <Shield className="h-16 w-16 text-primary" />
-                  </div>
+                  {personnel.avatar_url ? (
+                    <img
+                      src={personnel.avatar_url}
+                      alt={personnel.full_name}
+                      className="w-32 h-32 rounded-lg border-4 border-card shadow-glow-red object-cover"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-lg border-4 border-card bg-muted flex items-center justify-center shadow-glow-red">
+                      <Shield className="h-16 w-16 text-primary" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Basic Info */}
                 <div className="flex-1 mt-16 md:mt-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between flex-wrap gap-4">
                     <div>
-                      <h2 className="text-3xl font-bold">{`${personnel.firstName} ${personnel.middleName} ${personnel.lastName}`}</h2>
-                      <div className="flex items-center gap-3 mt-2">
+                      <h2 className="text-3xl font-bold">{personnel.full_name}</h2>
+                      <div className="flex items-center gap-3 mt-2 flex-wrap">
                         <Badge className="bg-primary hover:bg-primary/90">
-                          {personnel.pid}
+                          {personnel.employee_id}
                         </Badge>
-                        <Badge variant={personnel.status === "Active" ? "default" : "secondary"}>
-                          {personnel.status}
+                        <Badge variant={getStatusVariant(personnel.status)}>
+                          {getStatusLabel(personnel.status)}
                         </Badge>
-                        <span className="text-muted-foreground">•</span>
-                        <span className="text-muted-foreground">{personnel.role}</span>
+                        {personnel.position && (
+                          <>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">{personnel.position}</span>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <Link to={`/personnel/${id}/edit`}>
-                      <Button className="gap-2 bg-primary hover:bg-primary/90">
-                        <Edit className="h-4 w-4" />
-                        Edit
-                      </Button>
-                    </Link>
-                  </div>
-
-                  {licenseStatus === "expiring" && (
-                    <div className="mt-4 flex items-center gap-2 text-warning">
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="text-sm">Security license expires soon</span>
+                    <div className="flex gap-2">
+                      <Link to={`/personnel/${id}/edit`}>
+                        <Button className="gap-2 bg-primary hover:bg-primary/90">
+                          <Edit className="h-4 w-4" />
+                          Edit
+                        </Button>
+                      </Link>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" className="gap-2">
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete {personnel.full_name}'s record. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive hover:bg-destructive/90">
+                              {deleting ? "Deleting..." : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Photos Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Visual Identification
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">Face Photo</p>
-                  <div className="aspect-square rounded-lg border border-border bg-muted flex items-center justify-center">
-                    <Shield className="h-16 w-16 text-primary/50" />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">Full Body (Front)</p>
-                  <div className="aspect-square rounded-lg border border-border bg-muted flex items-center justify-center">
-                    <Shield className="h-16 w-16 text-primary/50" />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">Full Body (Side)</p>
-                  <div className="aspect-square rounded-lg border border-border bg-muted flex items-center justify-center">
-                    <Shield className="h-16 w-16 text-primary/50" />
                   </div>
                 </div>
               </div>
@@ -202,32 +240,22 @@ const PersonnelDetail = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <InfoItem icon={Mail} label="Email" value={personnel.email} />
-                <InfoItem icon={Phone} label="Mobile" value={personnel.mobile} />
-                <InfoItem icon={MapPin} label="Address" value={`${personnel.address}, ${personnel.city}, ${personnel.state} ${personnel.postal}`} />
-                <InfoItem icon={Calendar} label="Date of Birth" value={new Date(personnel.dob).toLocaleDateString()} />
+                <InfoItem icon={Phone} label="Phone" value={personnel.phone} />
+                <InfoItem icon={MapPin} label="Address" value={personnel.address} />
+                <InfoItem icon={Calendar} label="Date of Birth" value={personnel.date_of_birth ? new Date(personnel.date_of_birth).toLocaleDateString() : null} />
                 
-                <Separator />
-                
-                <div>
-                  <p className="text-sm font-medium mb-3 text-primary">Emergency Contact</p>
-                  <div className="space-y-3 pl-4">
-                    <InfoItem icon={Phone} label="Name" value={personnel.emergencyName} />
-                    <div className="flex items-start gap-3">
-                      <div className="h-5 w-5" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Relationship</p>
-                        <p className="font-medium">{personnel.emergencyRelation}</p>
+                {(personnel.emergency_contact_name || personnel.emergency_contact_phone) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium mb-3 text-primary">Emergency Contact</p>
+                      <div className="space-y-3 pl-4">
+                        <InfoItem icon={Phone} label="Name" value={personnel.emergency_contact_name} />
+                        <InfoItem icon={Phone} label="Phone" value={personnel.emergency_contact_phone} />
                       </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <div className="h-5 w-5" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Phone</p>
-                        <p className="font-medium">{personnel.emergencyPhone}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -240,129 +268,18 @@ const PersonnelDetail = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <InfoItem icon={Calendar} label="Hire Date" value={new Date(personnel.hireDate).toLocaleDateString()} />
-                <InfoItem icon={Shield} label="Job Title" value={personnel.role} />
-                <InfoItem icon={MapPin} label="Current Site" value={personnel.site} />
-                <InfoItem icon={Calendar} label="Shift Schedule" value={personnel.shift} />
-                <div className="flex items-start gap-3">
-                  <FileText className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Compensation</p>
-                    <p className="font-medium">{personnel.compensation}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Licenses & Certifications */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" />
-                  Licenses & Certifications
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <FileText className="h-5 w-5 text-primary mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Security License</p>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{personnel.securityLicense}</p>
-                      {licenseStatus === "expiring" && (
-                        <Badge variant="outline" className="bg-warning/10 text-warning border-warning text-xs">
-                          Expiring Soon
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Expires: {new Date(personnel.licenseExpiry).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                
-                <InfoItem icon={FileText} label="Government ID" value={personnel.govId} />
-                <InfoItem icon={FileText} label="Driver's License" value={`${personnel.driverLicense} (${personnel.driverClass})`} />
-                
-                {personnel.firearmPermit === "yes" && (
-                  <div className="flex items-start gap-3">
-                    <Award className="h-5 w-5 text-primary mt-0.5" />
+                <InfoItem icon={Calendar} label="Date Hired" value={personnel.date_hired ? new Date(personnel.date_hired).toLocaleDateString() : null} />
+                <InfoItem icon={Shield} label="Position" value={personnel.position} />
+                <InfoItem icon={MapPin} label="Department" value={personnel.department} />
+                {personnel.notes && (
+                  <>
+                    <Separator />
                     <div>
-                      <p className="text-sm text-muted-foreground">Firearm Permit</p>
-                      <p className="font-medium">Licensed</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Expires: {new Date(personnel.firearmExpiry).toLocaleDateString()}
-                      </p>
+                      <p className="text-sm text-muted-foreground mb-2">Notes</p>
+                      <p className="text-sm whitespace-pre-line bg-muted p-3 rounded">{personnel.notes}</p>
                     </div>
-                  </div>
+                  </>
                 )}
-                
-                <div className="flex items-start gap-3">
-                  <Award className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">First Aid/CPR</p>
-                    <p className="text-xs text-muted-foreground">
-                      Expires: {new Date(personnel.firstAidExpiry).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Training & Equipment */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-primary" />
-                  Training & Equipment
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium mb-2 text-primary">Specialized Training</p>
-                  <p className="text-sm">{personnel.specializedTraining}</p>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <p className="text-sm font-medium mb-2 text-primary">Uniform Sizes</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Jacket:</span> {personnel.jacketSize}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Shirt:</span> {personnel.shirtSize}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Pants:</span> {personnel.pantsSize}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Boots:</span> {personnel.bootsSize}
-                    </div>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <p className="text-sm font-medium mb-2 text-primary">Assigned Equipment</p>
-                  <div className="text-sm whitespace-pre-line bg-muted p-3 rounded">
-                    {personnel.equipmentSerials}
-                  </div>
-                  <p className="text-sm mt-2">
-                    <span className="text-muted-foreground">Access Card:</span> {personnel.accessCardId}
-                  </p>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Blood Type:</span>
-                    <Badge variant="outline" className="ml-2">{personnel.bloodType}</Badge>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>

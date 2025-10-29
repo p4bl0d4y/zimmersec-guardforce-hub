@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, UserPlus, Shield, Eye, Package, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -16,65 +18,69 @@ import {
 
 interface Personnel {
   id: string;
-  name: string;
-  pid: string;
-  site: string;
-  status: "Active" | "Leave of Absence" | "Terminated" | "Onboarding";
-  role: string;
-  photo?: string;
+  full_name: string;
+  employee_id: string;
+  position: string | null;
+  department: string | null;
+  status: string | null;
+  avatar_url: string | null;
 }
 
 const PersonnelList = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [loading, setLoading] = useState(true);
   const { signOut } = useAuth();
 
-  // Mock data - will be replaced with real data
-  const mockPersonnel: Personnel[] = [
-    {
-      id: "1",
-      name: "John Martinez",
-      pid: "ZS-2024-001",
-      site: "Downtown Corporate Plaza",
-      status: "Active",
-      role: "Security Guard"
-    },
-    {
-      id: "2",
-      name: "Sarah Chen",
-      pid: "ZS-2024-002",
-      site: "Industrial Park West",
-      status: "Active",
-      role: "Patrol Officer"
-    },
-    {
-      id: "3",
-      name: "Michael Thompson",
-      pid: "ZS-2023-087",
-      site: "Tech Campus North",
-      status: "Leave of Absence",
-      role: "Supervisor"
-    },
-  ];
+  useEffect(() => {
+    fetchPersonnel();
+  }, []);
 
-  const filteredPersonnel = mockPersonnel.filter(person =>
-    person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.pid.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.site.toLowerCase().includes(searchTerm.toLowerCase())
+  const fetchPersonnel = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("personnel")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setPersonnel(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPersonnel = personnel.filter(person =>
+    person.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    person.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (person.position && person.position.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (person.department && person.department.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const getStatusVariant = (status: Personnel["status"]) => {
+  const getStatusVariant = (status: string | null) => {
     switch (status) {
-      case "Active":
+      case "active":
         return "default";
-      case "Onboarding":
+      case "onboarding":
         return "secondary";
-      case "Leave of Absence":
+      case "leave":
         return "outline";
-      case "Terminated":
+      case "terminated":
         return "destructive";
       default:
         return "default";
     }
+  };
+
+  const getStatusLabel = (status: string | null) => {
+    if (!status) return "Active";
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   return (
@@ -125,7 +131,7 @@ const PersonnelList = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search personnel by name, ID, or site..."
+              placeholder="Search personnel by name, ID, position, or department..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -137,18 +143,24 @@ const PersonnelList = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Personnel ID</TableHead>
-                  <TableHead>Current Site</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Employee ID</TableHead>
+                  <TableHead>Position</TableHead>
+                  <TableHead>Department</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPersonnel.length === 0 ? (
+                {loading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      No personnel found
+                      Loading personnel...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredPersonnel.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      {searchTerm ? "No personnel found matching your search" : "No personnel registered yet"}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -157,18 +169,18 @@ const PersonnelList = () => {
                       key={person.id}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
                     >
-                      <TableCell className="font-medium">{person.name}</TableCell>
-                      <TableCell className="font-mono text-sm">{person.pid}</TableCell>
-                      <TableCell>{person.site}</TableCell>
+                      <TableCell className="font-medium">{person.full_name}</TableCell>
+                      <TableCell className="font-mono text-sm">{person.employee_id}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Shield className="h-3 w-3 text-primary" />
-                          {person.role}
+                          {person.position || "—"}
                         </div>
                       </TableCell>
+                      <TableCell>{person.department || "—"}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusVariant(person.status)}>
-                          {person.status}
+                          {getStatusLabel(person.status)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

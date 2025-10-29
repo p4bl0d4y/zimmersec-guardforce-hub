@@ -1,9 +1,11 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Shield, Plus, Package, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -13,25 +15,48 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// Mock inventory data
-const mockInventory = [
-  { id: "1", name: "Security Jacket", totalQuantity: 10, assignedQuantity: 7, category: "Uniform" },
-  { id: "2", name: "Radio Transceiver", totalQuantity: 15, assignedQuantity: 12, category: "Equipment" },
-  { id: "3", name: "Tactical Flashlight", totalQuantity: 20, assignedQuantity: 15, category: "Equipment" },
-  { id: "4", name: "Body Camera", totalQuantity: 8, assignedQuantity: 8, category: "Equipment" },
-  { id: "5", name: "Duty Belt", totalQuantity: 12, assignedQuantity: 9, category: "Uniform" },
-  { id: "6", name: "Security Badge Holder", totalQuantity: 25, assignedQuantity: 18, category: "Accessories" },
-];
+interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  total_quantity: number;
+  assigned_quantity: number;
+  available_quantity: number;
+}
 
 const InventoryList = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredInventory = mockInventory.filter((item) =>
+  useEffect(() => {
+    fetchInventory();
+  }, []);
+
+  const fetchInventory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("inventory")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setInventory(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredInventory = inventory.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const getAvailableQuantity = (total: number, assigned: number) => total - assigned;
 
   const getStockStatus = (available: number, total: number) => {
     const percentage = (available / total) * 100;
@@ -39,6 +64,9 @@ const InventoryList = () => {
     if (percentage <= 20) return { status: "Low Stock", variant: "outline" as const, className: "bg-warning/10 text-warning border-warning" };
     return { status: "In Stock", variant: "outline" as const, className: "bg-success/10 text-success border-success" };
   };
+
+  const totalItems = inventory.length;
+  const totalStock = inventory.reduce((acc, item) => acc + item.total_quantity, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,13 +114,11 @@ const InventoryList = () => {
             <div className="flex gap-4">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-2xl font-bold text-foreground">{mockInventory.length}</p>
+                <p className="text-2xl font-bold text-foreground">{totalItems}</p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Total Stock</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {mockInventory.reduce((acc, item) => acc + item.totalQuantity, 0)}
-                </p>
+                <p className="text-2xl font-bold text-foreground">{totalStock}</p>
               </div>
             </div>
           </div>
@@ -112,50 +138,56 @@ const InventoryList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredInventory.map((item) => {
-                  const available = getAvailableQuantity(item.totalQuantity, item.assignedQuantity);
-                  const stockStatus = getStockStatus(available, item.totalQuantity);
-                  
-                  return (
-                    <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-medium">
-                        <Link to={`/inventory/${item.id}`} className="hover:text-primary transition-colors flex items-center gap-2">
-                          <Package className="h-4 w-4" />
-                          {item.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{item.category}</TableCell>
-                      <TableCell className="text-center font-semibold">{item.totalQuantity}</TableCell>
-                      <TableCell className="text-center">{item.assignedQuantity}</TableCell>
-                      <TableCell className="text-center">
-                        <span className={available === 0 ? "text-destructive font-semibold" : "font-semibold"}>
-                          {available}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={stockStatus.variant} className={stockStatus.className}>
-                          {available === 0 && <AlertCircle className="h-3 w-3 mr-1" />}
-                          {stockStatus.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link to={`/inventory/${item.id}`}>
-                          <Button variant="ghost" size="sm">View</Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      Loading inventory...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredInventory.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      {searchTerm ? "No inventory items found matching your search" : "No inventory items yet"}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredInventory.map((item) => {
+                    const stockStatus = getStockStatus(item.available_quantity, item.total_quantity);
+                    
+                    return (
+                      <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell className="font-medium">
+                          <Link to={`/inventory/${item.id}`} className="hover:text-primary transition-colors flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            {item.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{item.category}</TableCell>
+                        <TableCell className="text-center font-semibold">{item.total_quantity}</TableCell>
+                        <TableCell className="text-center">{item.assigned_quantity}</TableCell>
+                        <TableCell className="text-center">
+                          <span className={item.available_quantity === 0 ? "text-destructive font-semibold" : "font-semibold"}>
+                            {item.available_quantity}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={stockStatus.variant} className={stockStatus.className}>
+                            {item.available_quantity === 0 && <AlertCircle className="h-3 w-3 mr-1" />}
+                            {stockStatus.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link to={`/inventory/${item.id}`}>
+                            <Button variant="ghost" size="sm">View</Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </div>
-
-          {filteredInventory.length === 0 && (
-            <div className="text-center py-12">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No inventory items found</p>
-            </div>
-          )}
         </div>
       </main>
 
